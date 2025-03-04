@@ -2,40 +2,45 @@ import { useState } from "react";
 import InputField from "@/components/InputField";
 import SubmitButton from "@/components/SubmitButton";
 import styles from "@/styles/home.module.css";
+import axios from "axios";
 
 export default function Home() {
   const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      alert("Please enter your name.");
+      alert("⚠️ Please enter your name.");
       return;
     }
 
-    try {
-      const response = await fetch("http://localhost:5000/create-folder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
+    setLoading(true);
+    setMessage("");
 
-      const data = await response.json();
-      if (response.ok) {
-        alert(`Folder Created: ${data.folderId}`);
+    try {
+      const response = await axios.post("/api/create-folder", { name });
+
+      if (response.status === 200) {
+        setMessage(`✅ Folder Created Successfully! Folder ID: ${response.data.folderId}`);
       } else {
-        alert("Error creating folder.");
+        setMessage("❌ Error creating folder.");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("❌ Fetch Error:", error);
+      setMessage("❌ Failed to fetch data from the server.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.box}>
-        <h1 className={styles.heading}>Enter your name</h1>
+        <h1 className={styles.heading}>Enter Your Name</h1>
         <InputField value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" />
-        <SubmitButton onClick={handleSubmit} text="Add your photos" />
+        <SubmitButton onClick={handleSubmit} text={loading ? "Creating Folder..." : "Add Your Photos"} />
+        {message && <p className={styles.message}>{message}</p>}
       </div>
     </div>
   );
